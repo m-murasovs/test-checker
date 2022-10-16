@@ -1,9 +1,13 @@
 const vscode = require('vscode');
 const { camelCase } = require('lodash');
 const { readdir } = require('fs').promises;
-const path = require('path');
 
 const { workspace, commands, window } = vscode;
+
+// TODO: immediately set state - currently only updates on restart
+// TODO: only check if there were changes in the file
+// TODO: adjust performance - currently it takes a lot of work on save
+// TODO: support checking multiple dirs
 
 function stateManager(context) {
 	const state = context.globalState.get('test-update-reminder') || {};
@@ -61,10 +65,6 @@ async function setTestDirPath(window, setState) {
 		window.showErrorMessage('The path to your test directory is required');
 	}
 }
-
-// TODO: immediately set state - currently only updates on restart
-// TODO: adjust performance - currently it takes a lot of work on save
-// TODO: support checking multiple dirs
 
 /**
  * @param {vscode.ExtensionContext} context

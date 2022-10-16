@@ -17,7 +17,7 @@
     "commands": [
       {
         "command": "test-update-reminder.checkTestDir",
-        "title": "Check for Matching Test Files"
+        "title": "Check Matching Test Files"
       },
       {
         "command": "test-update-reminder.updateTestDir",
