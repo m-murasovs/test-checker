@@ -1,4 +1,4 @@
-# test-update-reminder README
+# Test update reminder
 
 Checks if the file you just updated has a counterpart in the tests directory. Converts file names to camelCase and cleans them of file extensions like `.js`, `.spec.js`, etc.
 
@@ -14,4 +14,4 @@ You can find the commands in `package.json`.
 
 - Update Test Directory - change the directory in which to check for corresponding files.
 
-![Hi Bear](https://media.tenor.com/jjADcY68aA0AAAAM/waving-bear-hi.gif)
+![Hi, thanks, bye](https://media.tenor.com/jjADcY68aA0AAAAM/waving-bear-hi.gif)
