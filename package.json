@@ -1,7 +1,7 @@
 {
-  "name": "test-checker",
-  "displayName": "Test checker",
-  "description": "Check if your changes are going to break your tests. ",
+  "name": "test-update-reminder",
+  "displayName": "Test update reminder",
+  "description": "Checks if your changes are going to break your tests.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.71.0"
@@ -10,14 +10,18 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:test-checker.helloWorld"
+    "*"
   ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "test-checker.helloWorld",
-        "title": "Hello World"
+        "command": "test-update-reminder.checkTestDir",
+        "title": "Check for Matching Test Files"
+      },
+      {
+        "command": "test-update-reminder.updateTestDir",
+        "title": "Update Test Directory"
       }
     ]
   },

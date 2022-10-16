@@ -1,33 +1,109 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const { camelCase } = require('lodash');
+const { readdir } = require('fs').promises;
+const path = require('path');
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+const { workspace, commands, window } = vscode;
+
+function stateManager(context) {
+	const state = context.globalState.get('test-update-reminder') || {};
+	const setState = (newState) => {
+		context.globalState.update('test-update-reminder', { ...state, ...newState });
+	}
+	return { state, setState };
+}
+
+async function checkFileAgainstTestDir(savedFile, testDirPath) {
+	const filePathParts = savedFile.split('/');
+	const savedFileName = camelCase(filePathParts.pop().split('.').shift());
+	const fileParentName = camelCase(filePathParts.at(-1));
+	const fileGrandparentName = camelCase(filePathParts.at(-2));
+
+	try {
+		const testDirFileNames = await readdir(testDirPath);
+		testDirFileNames.map((testFileName) => {
+			const cleanedTestFileName = camelCase(testFileName.split('.').shift());
+
+			if (
+				cleanedTestFileName === savedFileName
+				|| cleanedTestFileName === fileParentName
+				|| cleanedTestFileName === fileGrandparentName
+			) {
+				window.showInformationMessage(
+					`Yo, the file you just edited:
+					${fileGrandparentName}/${fileParentName}/${savedFileName}
+					has a corresponding test file:
+					${testFileName}.
+					Do you need to update it?`
+				);
+			}
+		});
+	} catch (err) {
+		console.error(`Cannot read folder: ${testDirPath}: is not correct. \n\n ERR`, err);
+	}
+}
+
+async function setTestDirPath(window, setState) {
+	const testDirPath = await window.showInputBox({
+		placeHolder: 'test/directory/path',
+		prompt: 'Enter the absolute path to your test directory',
+		value: '',
+	}).then((value) => {
+		if (!value) {
+			return;
+		}
+		return value;
+	});
+
+	if (testDirPath !== undefined) {
+		setState({ testDirPath });
+	} else {
+		window.showErrorMessage('The path to your test directory is required');
+	}
+}
+
+// TODO: immediately set state - currently only updates on restart
+// TODO: adjust performance - currently it takes a lot of work on save
+// TODO: support checking multiple dirs
 
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+async function activate(context) {
+	console.log('Extension "test-update-reminder" is running');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "test-checker" is now active!');
+	const { state, setState } = stateManager(context);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('test-checker.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+	if (!state.testDirPath) {
+		setTestDirPath(window, setState);
+	}
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Test checker!');
-	});
+	workspace.onDidSaveTextDocument(async (event) => {
+		await checkFileAgainstTestDir(event.fileName, state.testDirPath);
+	})
 
-	context.subscriptions.push(disposable);
+	let manuallyCheckFileAgainstTest = commands.registerCommand(
+		'test-update-reminder.checkTestDir',
+		function () {
+			workspace.onDidSaveTextDocument(async (event) => {
+				await checkFileAgainstTestDir(event.fileName, state.testDirPath);
+			})
+		}
+	);
+
+	let updateTestDirName = commands.registerCommand(
+		'test-update-reminder.updateTestDir',
+		function () {
+			setTestDirPath(window, setState);
+		}
+	);
+
+	context.subscriptions.push(
+		manuallyCheckFileAgainstTest,
+		updateTestDirName,
+	);
 }
 
-// this method is called when your extension is deactivated
 function deactivate() {}
 
 module.exports = {
