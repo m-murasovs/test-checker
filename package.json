@@ -2,6 +2,7 @@
   "name": "test-update-reminder",
   "displayName": "Test update reminder",
   "description": "Checks if your changes are going to break your tests.",
+  "repository": "https://github.com/m-murasovs/test-checker",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.71.0"
@@ -10,7 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished",
+    "onCommand:test-update-reminder.checkTestDir"
   ],
   "main": "./extension.js",
   "contributes": {
