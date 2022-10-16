@@ -18,13 +18,15 @@ function stateManager(context) {
 	return { globalState, setGlobalState };
 }
 
-async function checkFileAgainstTestDir(savedFile, testDirPath) {
-	const filePathParts = savedFile.split('/');
+async function checkFileAgainstTestDir(savedFilePath, testDirPath) {
+	const filePathParts = savedFilePath.split('/');
 	const savedFileName = camelCase(filePathParts.pop().split('.').shift());
 	const fileParentName = camelCase(filePathParts.at(-1));
 	const fileGrandparentName = camelCase(filePathParts.at(-2));
 
-	try {
+	if (savedFilePath.includes(testDirPath)) return;
+
+	try { 
 		const testDirFileNames = await readdir(testDirPath);
 		testDirFileNames.map((testFileName) => {
 			const cleanedTestFileName = camelCase(testFileName.split('.').shift());
