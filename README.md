@@ -22,4 +22,4 @@ If the input box doesn't come up on its own, just run the `Update Test Directory
 
 <img width="515" alt="install-from-vsix" src="https://user-images.githubusercontent.com/38246758/196050636-a976753c-fac2-47b6-981f-51bb90b17106.png">
 
-![Hi, thanks, bye](https://media.tenor.com/jjADcY68aA0AAAAM/waving-bear-hi.gif)
+![Hi, thanks, bye](https://thumbs.gfycat.com/InferiorAdmirableCommongonolek-max-1mb.gif)
