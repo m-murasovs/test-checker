@@ -4,7 +4,6 @@ const { readdir } = require('fs').promises;
 
 const { workspace, commands, window } = vscode;
 
-// TODO: immediately set globalState - currently only updates on restart
 // TODO: only check if there were changes in the file
 // TODO: adjust performance - currently it takes a lot of work on save
 // TODO: support checking multiple dirs
@@ -75,6 +74,8 @@ async function activate(context) {
 
 	const { globalState, setGlobalState } = stateManager(context);
 	let currentState = {};
+
+	console.log(workspace)	
 
 	if (!globalState.testDirPath) {
 		const userInput = await getUserInput(window);
