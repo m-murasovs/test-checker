@@ -4,17 +4,19 @@ const { readdir } = require('fs').promises;
 
 const { workspace, commands, window } = vscode;
 
-// TODO: immediately set state - currently only updates on restart
+// TODO: immediately set globalState - currently only updates on restart
 // TODO: only check if there were changes in the file
 // TODO: adjust performance - currently it takes a lot of work on save
 // TODO: support checking multiple dirs
 
+const NO_USER_INPUT_ERROR_MESSAGE = 'The test directory path is required';
+
 function stateManager(context) {
-	const state = context.globalState.get('test-update-reminder') || {};
-	const setState = (newState) => {
-		context.globalState.update('test-update-reminder', { ...state, ...newState });
+	const globalState = context.globalState.get('test-update-reminder') || {};
+	const setGlobalState = (newState) => {
+		context.globalState.update('test-update-reminder', { ...globalState, ...newState });
 	}
-	return { state, setState };
+	return { globalState, setGlobalState };
 }
 
 async function checkFileAgainstTestDir(savedFile, testDirPath) {
@@ -33,21 +35,24 @@ async function checkFileAgainstTestDir(savedFile, testDirPath) {
 				|| cleanedTestFileName === fileParentName
 				|| cleanedTestFileName === fileGrandparentName
 			) {
-				window.showInformationMessage(
+				window.showWarningMessage(
 					`Yo, the file you just edited:
-					${fileGrandparentName}/${fileParentName}/${savedFileName}
+					<> ${fileGrandparentName}/${fileParentName}/${savedFileName} <>
 					has a corresponding test file:
-					${testFileName}.
+					<> ${testFileName} <>
 					Do you need to update it?`
 				);
+				console.log('Matching test file found');
+			} else {
+				console.log('No matching test file found');
 			}
 		});
 	} catch (err) {
-		console.error(`Cannot read folder: ${testDirPath}: is not correct. \n\n ERR`, err);
+		console.error(`Cannot read folder: <> ${testDirPath} <> is not correct. \n\n ERR`, err);
 	}
 }
 
-async function setTestDirPath(window, setState) {
+async function getUserInput(window) {
 	const testDirPath = await window.showInputBox({
 		placeHolder: 'test/directory/path',
 		prompt: 'Enter the absolute path to your test directory',
@@ -59,11 +64,7 @@ async function setTestDirPath(window, setState) {
 		return value;
 	});
 
-	if (testDirPath !== undefined) {
-		setState({ testDirPath });
-	} else {
-		window.showErrorMessage('The path to your test directory is required');
-	}
+	return testDirPath;
 }
 
 /**
@@ -72,29 +73,45 @@ async function setTestDirPath(window, setState) {
 async function activate(context) {
 	console.log('Extension "test-update-reminder" is running');
 
-	const { state, setState } = stateManager(context);
+	const { globalState, setGlobalState } = stateManager(context);
+	let currentState = {};
 
-	if (!state.testDirPath) {
-		setTestDirPath(window, setState);
+	if (!globalState.testDirPath) {
+		const userInput = await getUserInput(window);
+
+		if (!userInput) {
+			window.showErrorMessage(NO_USER_INPUT_ERROR_MESSAGE);
+		}
+
+		currentState.testDirPath = userInput;
+		setGlobalState(currentState);
 	}
 
 	workspace.onDidSaveTextDocument(async (event) => {
-		await checkFileAgainstTestDir(event.fileName, state.testDirPath);
+		const testDirPath = currentState.testDirPath || globalState.testDirPath;
+		await checkFileAgainstTestDir(event.fileName, testDirPath);
 	})
 
 	let manuallyCheckFileAgainstTest = commands.registerCommand(
 		'test-update-reminder.checkTestDir',
 		function () {
 			workspace.onDidSaveTextDocument(async (event) => {
-				await checkFileAgainstTestDir(event.fileName, state.testDirPath);
+				await checkFileAgainstTestDir(event.fileName, globalState.testDirPath);
 			})
 		}
 	);
 
 	let updateTestDirName = commands.registerCommand(
 		'test-update-reminder.updateTestDir',
-		function () {
-			setTestDirPath(window, setState);
+		async function () {
+			const userInput = await getUserInput(window);
+
+			if (!userInput) {
+				window.showErrorMessage(NO_USER_INPUT_ERROR_MESSAGE);
+			}
+
+			currentState.testDirPath = userInput;
+			setGlobalState(currentState);
 		}
 	);
 
