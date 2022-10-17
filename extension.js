@@ -4,9 +4,13 @@ const { readdir } = require('fs').promises;
 
 const { workspace, commands, window } = vscode;
 
+// TODO: USE WORKSPACE STATE INSTEAD OF GLOBAL - IT WILL HELP WITH SWITCHING BETWEEN WORKSPACES - EACH HAS TO HAS ITS OWN SETTING
+// Use relative URLs!
+// TODO: add a command that lets you see what your test dir is set to
 // TODO: only check if there were changes in the file
 // TODO: adjust performance - currently it takes a lot of work on save
 // TODO: support checking multiple dirs
+// TODO?: consider adding a settings file for all the stuff.
 
 const NO_USER_INPUT_ERROR_MESSAGE = 'The test directory path is required';
 
