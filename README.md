@@ -14,4 +14,12 @@ You can find the commands in `package.json`.
 
 - Update Test Directory - change the directory in which to check for corresponding files.
 
-![Hi, thanks, bye](https://media.tenor.com/jjADcY68aA0AAAAM/waving-bear-hi.gif)
+## Install manually
+
+Save the `test-update-reminder-0.0.1.vsix` file to your desktop. Then, in your VSCode, go to Extensions, click the `...` button, and select `Install from VSIX`.
+
+If the input box doesn't come up on its own, just run the `Update Test Directory` command and enjoy!
+
+<img width="515" alt="install-from-vsix" src="https://user-images.githubusercontent.com/38246758/196050636-a976753c-fac2-47b6-981f-51bb90b17106.png">
+
+![Hi, thanks, bye](https://thumbs.gfycat.com/InferiorAdmirableCommongonolek-max-1mb.gif)
