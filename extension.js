@@ -1,25 +1,23 @@
 const vscode = require('vscode');
 const { camelCase } = require('lodash');
 const { readdir } = require('fs').promises;
+const path = require('path');
 
 const { workspace, commands, window } = vscode;
 
-// TODO: USE WORKSPACE STATE INSTEAD OF GLOBAL - IT WILL HELP WITH SWITCHING BETWEEN WORKSPACES - EACH HAS TO HAS ITS OWN SETTING
-// Use relative URLs!
-// TODO: add a command that lets you see what your test dir is set to
 // TODO: only check if there were changes in the file
 // TODO: adjust performance - currently it takes a lot of work on save
 // TODO: support checking multiple dirs
 // TODO?: consider adding a settings file for all the stuff.
 
-const NO_USER_INPUT_ERROR_MESSAGE = 'The test directory path is required';
+const NO_USER_INPUT_ERROR_MESSAGE = 'The test directory path is required. Use the CMD+SHIFT+P > Set Test Directory command to set it.';
 
 function stateManager(context) {
-	const globalState = context.globalState.get('test-update-reminder') || {};
-	const setGlobalState = (newState) => {
-		context.globalState.update('test-update-reminder', { ...globalState, ...newState });
+	const workspaceState = context.workspaceState.get('test-update-reminder') || {};
+	const setWorkspaceState = (newState) => {
+		context.workspaceState.update('test-update-reminder', { ...workspaceState, ...newState });
 	}
-	return { globalState, setGlobalState };
+	return { workspaceState, setWorkspaceState };
 }
 
 async function checkFileAgainstTestDir(savedFilePath, testDirPath) {
@@ -27,11 +25,12 @@ async function checkFileAgainstTestDir(savedFilePath, testDirPath) {
 	const savedFileName = camelCase(filePathParts.pop().split('.').shift());
 	const fileParentName = camelCase(filePathParts.at(-1));
 	const fileGrandparentName = camelCase(filePathParts.at(-2));
-
+	const testDirAbsolutePath = path.join(__dirname, testDirPath);
+	console.log(savedFilePath, testDirPath, testDirAbsolutePath)
 	if (savedFilePath.includes(testDirPath)) return;
 
 	try { 
-		const testDirFileNames = await readdir(testDirPath);
+		const testDirFileNames = await readdir(path.resolve(testDirAbsolutePath));
 		testDirFileNames.map((testFileName) => {
 			const cleanedTestFileName = camelCase(testFileName.split('.').shift());
 
@@ -42,9 +41,9 @@ async function checkFileAgainstTestDir(savedFilePath, testDirPath) {
 			) {
 				window.showWarningMessage(
 					`Yo, the file you just edited:
-					<> ${fileGrandparentName}/${fileParentName}/${savedFileName} <>
+					|> ${fileGrandparentName}/${fileParentName}/${savedFileName} <|
 					has a corresponding test file:
-					<> ${testFileName} <>
+					|> ${testFileName} <|
 					Do you need to update it?`
 				);
 				console.log('Matching test file found');
@@ -53,14 +52,14 @@ async function checkFileAgainstTestDir(savedFilePath, testDirPath) {
 			}
 		});
 	} catch (err) {
-		console.error(`Cannot read folder: <> ${testDirPath} <> is not correct. \n\n ERR`, err);
+		console.error(`Cannot read folder: |> ${testDirPath} <| is not correct. \n\n ERR`, err);
 	}
 }
 
 async function getUserInput(window) {
 	const testDirPath = await window.showInputBox({
 		placeHolder: 'test/directory/path',
-		prompt: 'Enter the absolute path to your test directory',
+		prompt: 'Enter the relative path to your test directory',
 		value: '',
 	}).then((value) => {
 		if (!value) {
@@ -78,12 +77,14 @@ async function getUserInput(window) {
 async function activate(context) {
 	console.log('Extension "test-update-reminder" is running');
 
-	const { globalState, setGlobalState } = stateManager(context);
+	const { workspaceState, setWorkspaceState } = stateManager(context);
 	let currentState = {};
 
 	console.log(workspace)	
 
-	if (!globalState.testDirPath) {
+
+
+	if (!workspaceState.testDirPath) {
 		const userInput = await getUserInput(window);
 
 		if (!userInput) {
@@ -91,25 +92,25 @@ async function activate(context) {
 		}
 
 		currentState.testDirPath = userInput;
-		setGlobalState(currentState);
+		setWorkspaceState(currentState);
 	}
 
 	workspace.onDidSaveTextDocument(async (event) => {
-		const testDirPath = currentState.testDirPath || globalState.testDirPath;
+		const testDirPath = currentState.testDirPath || workspaceState.testDirPath;
 		await checkFileAgainstTestDir(event.fileName, testDirPath);
 	})
 
-	let manuallyCheckFileAgainstTest = commands.registerCommand(
+	const manuallyCheckFileAgainstTest = commands.registerCommand(
 		'test-update-reminder.checkTestDir',
 		function () {
 			workspace.onDidSaveTextDocument(async (event) => {
-				await checkFileAgainstTestDir(event.fileName, globalState.testDirPath);
+				await checkFileAgainstTestDir(event.fileName, workspaceState.testDirPath);
 			})
 		}
 	);
 
-	let updateTestDirName = commands.registerCommand(
-		'test-update-reminder.updateTestDir',
+	const setTestDirName = commands.registerCommand(
+		'test-update-reminder.setTestDir',
 		async function () {
 			const userInput = await getUserInput(window);
 
@@ -118,13 +119,22 @@ async function activate(context) {
 			}
 
 			currentState.testDirPath = userInput;
-			setGlobalState(currentState);
+			setWorkspaceState(currentState);
+		}
+	);
+
+	const getTestDirName = commands.registerCommand(
+		'test-update-reminder.getTestDir',
+		function () {
+			const workspaceState = context.workspaceState.get('test-update-reminder') || {};
+			window.showInformationMessage(workspaceState.testDirPath || 'No test directory set');
 		}
 	);
 
 	context.subscriptions.push(
 		manuallyCheckFileAgainstTest,
-		updateTestDirName,
+		setTestDirName,
+		getTestDirName
 	);
 }
 

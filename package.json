@@ -22,8 +22,12 @@
         "title": "Check Matching Test Files"
       },
       {
-        "command": "test-update-reminder.updateTestDir",
-        "title": "Update Test Directory"
+        "command": "test-update-reminder.setTestDir",
+        "title": "Set Test Directory"
+      },
+      {
+        "command": "test-update-reminder.getTestDir",
+        "title": "Get Test Directory"
       }
     ]
   },
